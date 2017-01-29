@@ -25,6 +25,19 @@ app = Flask(__name__)
 model = None
 prev_image_array = None
 
+
+xCropUp = .35      # % of crop
+xCropBottom = .875   #
+
+imageWidth = 200
+imageHeight = 66
+
+
+def CropImage(image):
+    height = len(image)
+    return image[int(height*xCropUp):int(height*xCropBottom), :, :]
+
+
 @sio.on('telemetry')
 def telemetry(sid, data):
     # The current steering angle of the car
@@ -37,7 +50,13 @@ def telemetry(sid, data):
     imgString = data["image"]
     image = Image.open(BytesIO(base64.b64decode(imgString)))
     image_array = np.asarray(image)
+
+    # Changes
+    image_array = CropImage(image_array)
     image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2HSV)
+    image_array = cv2.resize(image_array, (imageWidth, imageHeight))
+
+
     transformed_image_array = image_array[None, :, :, :]
     # This model currently assumes that the features of the model are just the images. Feel free to change this.
     steering_angle = float(model.predict(transformed_image_array, batch_size=1))
@@ -54,6 +73,7 @@ def connect(sid, environ):
 
 
 def send_control(steering_angle, throttle):
+    print('(angle,throttle):',steering_angle,throttle)
     sio.emit("steer", data={
     'steering_angle': steering_angle.__str__(),
     'throttle': throttle.__str__()
