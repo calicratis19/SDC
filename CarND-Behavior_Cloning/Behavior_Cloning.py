@@ -22,10 +22,12 @@ from keras.layers.pooling import MaxPooling2D
 from keras.regularizers import l2
 from keras.models import model_from_json
 
+from keras.callbacks import ModelCheckpoint
+
 train_samples_per_epoch = 20032
 valid_samples_per_epoch = 16384
-trainBatchSize = 256
-validationBatchSize = 256
+trainBatchSize = 128
+validationBatchSize = 128
 mean = 83.587824273  # Pre Calculated
 
 xCropUp = .20  # % of crop
@@ -36,6 +38,25 @@ imageHeight = 66
 negative = 0
 positive = 0
 
+
+def trans_angle(steer):
+
+    """
+    translate image and compensate for the translation on the steering angle
+    """
+
+    trans_range = 50
+
+    # horizontal translation with 0.008 steering compensation per pixel
+    tr_x = trans_range * np.random.uniform() - trans_range / 2
+    steer_ang = steer + tr_x / trans_range * .2
+
+    if(steer_ang > 1):
+        steer_ang = 1
+    elif(steer_ang < -1):
+        steer_ang = -1
+
+    return steer_ang
 
 def trans_image(dir, steer):
     img = cv2.imread(dir)  # opencv opens images in BGR format
@@ -50,7 +71,7 @@ def trans_image(dir, steer):
 
     # horizontal translation with 0.008 steering compensation per pixel
     tr_x = trans_range * np.random.uniform() - trans_range / 2
-    steer_ang = steer + tr_x / trans_range * .4
+    steer_ang = steer + tr_x / trans_range * .2
 
     Trans_M = np.float32([[1, 0, tr_x], [0, 1, 0]])
     img = cv2.warpAffine(img, Trans_M, (cols, rows))
@@ -79,13 +100,50 @@ def RandomBrightness(img):
     img[:, :, :, 2] = img[:, :, :, 2] * scale
     return img
 
+def ValidDataGenerator(dir, batchSize):
+
+    dir = './session_data/'
+    with open(dir + 'driving_log.csv', 'r') as drivingLog:
+        reader = csv.reader(drivingLog)
+        drivingLog = list(reader)
+    drivingLog = shuffle(drivingLog)
+
+    negative = 0
+    positive = 0
+
+    zero = 0
+
+    while True:
+        batchx, batchy = [], []
+        drivingLog = shuffle(drivingLog)
+        for row in drivingLog:
+            indx = np.random.permutation(3)
+            steering = float(row[3])
+
+            for i in range(3):
+
+                if indx[i] is 1:  # left camera image
+                    steering = min(1, steering + .25)
+                elif indx[i] is 2:  # right camera image
+                    steering = max(-1, steering - .25)
+
+                file = row[indx[i]]
+
+                img = ReadAndProcessImage(dir + file)
+
+                batchx.append(img)
+                batchy.append(steering)
+                if len(batchx) >= batchSize:
+                    yield (shuffle(np.vstack(batchx),np.vstack(batchy)))
+                    batchx, batchy = [], []
+        print('\n Valid: negative: ', negative, ' positive: ', positive, ' zero: ', zero)
 
 def DataGenerator(dir, batchSize):
     dir = './data/'
     with open(dir + 'driving_log.csv', 'r') as drivingLog:
         reader = csv.reader(drivingLog)
         drivingLog = list(reader)
-    dir = './data1/'
+    '''dir = './data1/'
     with open(dir + 'driving_log.csv', 'r') as drivingLog1:
         reader = csv.reader(drivingLog1)
         drivingLog = list(reader) + drivingLog
@@ -101,7 +159,7 @@ def DataGenerator(dir, batchSize):
     with open(dir + 'driving_log.csv', 'r') as drivingLog1:
         reader = csv.reader(drivingLog1)
         drivingLog = list(reader) + drivingLog
-    drivingLog = shuffle(drivingLog)
+    drivingLog = shuffle(drivingLog)'''
 
     global negative
     global positive
@@ -150,21 +208,26 @@ def DataGenerator(dir, batchSize):
 
                     positive += 2
                     negative += 2
-                '''elif steering == 0:
+                else:
+                    if steering == 0 :
+                        zero+=1
+                        if zero % 30 == 0:
+                            img = ReadAndProcessImage(dir + file)
+                            batchx.append(img)
+                            batchy.append(steering)
+                    steeringTemp = trans_angle(steering)
+                    #if (negative > positive and steeringTemp > 0) or (negative < positive and steeringTemp < 0):
                     img, steering = trans_image(dir + file, steering)
                     batchx.append(img)
                     batchy.append(steering)
-					if(steering>0):
-						positive+=1
-					else:
-						negative+=1					
-				'''
+                    positive += steering > 0
+                    negative += steering < 0
                 if len(batchx) >= batchSize:
-                    # print('POSITIVE: ',positive,' Negative: ',negative)
                     yield (shuffle(np.vstack(batchx),np.vstack(batchy)))
                     batchx, batchy = [], []
-                    # batchx, batchy = [], []
-        print('negative: ', negative, ' positive: ', positive, ' zero: ', zero)
+                #break
+
+        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/40)
 
 
 def CreateModel():
@@ -192,8 +255,8 @@ def CreateModel():
 
     model.add(Flatten())
 
-    model.add(Dense(1164, init='he_normal'))
-    model.add(ELU())
+    #model.add(Dense(1164, init='he_normal'))
+    #model.add(ELU())
 
     model.add(Dense(100, init='he_normal'))
     model.add(ELU())
@@ -205,6 +268,9 @@ def CreateModel():
     model.add(ELU())
 
     model.add(Dense(1, init='he_normal'))
+
+    model.load_weights('./model.h5')
+
     return model
 
 
@@ -222,16 +288,18 @@ print('mean: ', mean)
 totalTrain = 0
 totalValid = 0
 
-# trainGenerator = DataGenerator('./session_data/',trainBatchSize)
+validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
 trainGenerator = DataGenerator('./data/', trainBatchSize)
 
 print("Created generator and starting training")
-
+weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}.h5', monitor='loss', verbose=2, save_best_only=False, mode='auto')
+model.summary()
 model.fit_generator(
     trainGenerator,
-    samples_per_epoch=train_samples_per_epoch, nb_epoch=25,
-    # validation_data=validGenerator,
-    # nb_val_samples=valid_samples_per_epoch,
+    samples_per_epoch=train_samples_per_epoch, nb_epoch=5,
+    validation_data=validGenerator,
+    nb_val_samples=valid_samples_per_epoch,
+    callbacks=[weight_save_callback],
     verbose=1
 )
 
@@ -239,5 +307,4 @@ print('negative: ', negative, ' positive: ', positive)
 model.save_weights('model.h5', True)
 with open('model.json', 'w') as file:
     json.dump(model.to_json(), file)
-
 
