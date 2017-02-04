@@ -29,8 +29,8 @@ prev_image_array = None
 xCropUp = .35      # % of crop
 xCropBottom = .875   #
 
-imageWidth = 200
-imageHeight = 66
+imageWidth = 64
+imageHeight = 64
 
 
 def CropImage(image):

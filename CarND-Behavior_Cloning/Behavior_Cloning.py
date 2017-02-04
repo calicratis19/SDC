@@ -33,8 +33,8 @@ mean = 83.587824273  # Pre Calculated
 xCropUp = .20  # % of crop
 xCropBottom = .875  #
 
-imageWidth = 200
-imageHeight = 66
+imageWidth = 64
+imageHeight = 64
 negative = 0
 positive = 0
 
@@ -44,9 +44,7 @@ def trans_angle(steer):
     """
     translate image and compensate for the translation on the steering angle
     """
-
     trans_range = 50
-
     # horizontal translation with 0.008 steering compensation per pixel
     tr_x = trans_range * np.random.uniform() - trans_range / 2
     steer_ang = steer + tr_x / trans_range * .2
@@ -133,6 +131,9 @@ def ValidDataGenerator(dir, batchSize):
 
                 batchx.append(img)
                 batchy.append(steering)
+                negative+= steering < 0
+                positive+= steering > 0
+                zero+= steering == 0
                 if len(batchx) >= batchSize:
                     yield (shuffle(np.vstack(batchx),np.vstack(batchy)))
                     batchx, batchy = [], []
@@ -184,7 +185,7 @@ def DataGenerator(dir, batchSize):
 
                 file = row[indx[i]]
 
-                if (steering < -0.99 or steering > 0.01):
+                if (steering < -0.9 or steering > 0.1):
                     img = ReadAndProcessImage(dir + file)
                     # Change Brightness
                     img1 = RandomBrightness(img.copy())
@@ -211,23 +212,28 @@ def DataGenerator(dir, batchSize):
                 else:
                     if steering == 0 :
                         zero+=1
-                        if zero % 30 == 0:
+                        if zero % 20 == 0:
                             img = ReadAndProcessImage(dir + file)
                             batchx.append(img)
                             batchy.append(steering)
                     steeringTemp = trans_angle(steering)
-                    #if (negative > positive and steeringTemp > 0) or (negative < positive and steeringTemp < 0):
-                    img, steering = trans_image(dir + file, steering)
-                    batchx.append(img)
-                    batchy.append(steering)
-                    positive += steering > 0
-                    negative += steering < 0
+                    if (negative > positive and steeringTemp > 0) or (negative < positive and steeringTemp < 0):
+                        img, steering = trans_image(dir + file, steering)
+                        batchx.append(img)
+                        batchy.append(steering)
+
+                        img[:, ] = cv2.flip(img[0], 1)
+                        batchx.append(img)
+                        batchy.append(-steering)
+
+                        positive += 1
+                        negative += 1
                 if len(batchx) >= batchSize:
                     yield (shuffle(np.vstack(batchx),np.vstack(batchy)))
                     batchx, batchy = [], []
                 #break
 
-        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/40)
+        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/30)
 
 
 def CreateModel():
@@ -238,18 +244,23 @@ def CreateModel():
 
     model.add(Convolution2D(24, 5, 5, subsample=(2, 2), init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(48, 5, 5, subsample=(2, 2), init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     print("Creating FC Model")
 
@@ -260,16 +271,19 @@ def CreateModel():
 
     model.add(Dense(100, init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Dense(50, init='he_normal'))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
-    model.add(Dense(10, init='he_normal'))
+    model.add(Dense(10, init='he_normal', W_regularizer=l2(.0001)))
     model.add(ELU())
+    model.add(Dropout(0.2))
 
     model.add(Dense(1, init='he_normal'))
 
-    model.load_weights('./model.h5')
+    #model.load_weights('./model.h5')
 
     return model
 
@@ -283,11 +297,6 @@ model = CreateModel()
 adam = Adam(lr=0.0001)
 model.compile(optimizer="adam", loss="mse")
 
-# mean =  MeanCalculator() # calculated once
-print('mean: ', mean)
-totalTrain = 0
-totalValid = 0
-
 validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
 trainGenerator = DataGenerator('./data/', trainBatchSize)
 
@@ -296,14 +305,13 @@ weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}
 model.summary()
 model.fit_generator(
     trainGenerator,
-    samples_per_epoch=train_samples_per_epoch, nb_epoch=5,
+    samples_per_epoch=train_samples_per_epoch, nb_epoch=20,
     validation_data=validGenerator,
     nb_val_samples=valid_samples_per_epoch,
     callbacks=[weight_save_callback],
     verbose=1
 )
 
-print('negative: ', negative, ' positive: ', positive)
 model.save_weights('model.h5', True)
 with open('model.json', 'w') as file:
     json.dump(model.to_json(), file)
