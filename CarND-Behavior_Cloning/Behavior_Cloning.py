@@ -94,7 +94,7 @@ def ReadAndProcessImage(path):
 
 
 def RandomBrightness(img):
-    scale = random.uniform(.7, 1.25)
+    scale = random.uniform(.3, 1)
     img[:, :, :, 2] = img[:, :, :, 2] * scale
     return img
 
@@ -188,8 +188,8 @@ def DataGenerator(dir, batchSize):
                 if (steering < -0.9 or steering > 0.1):
                     img = ReadAndProcessImage(dir + file)
                     # Change Brightness
-                    img1 = RandomBrightness(img.copy())
-                    batchx.append(img1)
+                    img = RandomBrightness(img)
+                    batchx.append(img)
                     batchy.append(steering)
 
                     # Flip image
@@ -198,10 +198,12 @@ def DataGenerator(dir, batchSize):
                     batchx.append(img2)
                     batchy.append(-steering)
 
+                    # Translate image.
                     img, steering = trans_image(dir + file, steering)
                     batchx.append(img)
                     batchy.append(steering)
 
+                    # Flip the translated image.
                     img2 = img.copy()
                     img2[:, ] = cv2.flip(img2[0], 1)
                     batchx.append(img2)
@@ -212,7 +214,7 @@ def DataGenerator(dir, batchSize):
                 else:
                     if steering == 0 :
                         zero+=1
-                        if zero % 20 == 0:
+                        if zero % 10 == 0:
                             img = ReadAndProcessImage(dir + file)
                             batchx.append(img)
                             batchy.append(steering)
@@ -233,7 +235,7 @@ def DataGenerator(dir, batchSize):
                     batchx, batchy = [], []
                 #break
 
-        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/30)
+        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/20)
 
 
 def CreateModel():
@@ -242,23 +244,23 @@ def CreateModel():
     model = Sequential()
     model.add(Lambda(lambda x: x / 255 - 0.5, input_shape=input_shape))
 
-    model.add(Convolution2D(24, 5, 5, subsample=(2, 2), init='he_normal'))
+    model.add(Convolution2D(24, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='he_normal'))
+    model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Convolution2D(48, 5, 5, subsample=(2, 2), init='he_normal'))
+    model.add(Convolution2D(48, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='he_normal'))
+    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='he_normal'))
+    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
@@ -269,19 +271,19 @@ def CreateModel():
     #model.add(Dense(1164, init='he_normal'))
     #model.add(ELU())
 
-    model.add(Dense(100, init='he_normal'))
+    model.add(Dense(100, init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Dense(50, init='he_normal'))
+    model.add(Dense(50, init='uniform'))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Dense(10, init='he_normal', W_regularizer=l2(.0001)))
+    model.add(Dense(10, init='uniform', W_regularizer=l2(.0001)))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Dense(1, init='he_normal'))
+    model.add(Dense(1, init='uniform'))
 
     #model.load_weights('./model.h5')
 
