@@ -24,7 +24,7 @@ from keras.models import model_from_json
 
 from keras.callbacks import ModelCheckpoint
 
-train_samples_per_epoch = 20032
+train_samples_per_epoch = 10016
 valid_samples_per_epoch = 16384
 trainBatchSize = 128
 validationBatchSize = 128
@@ -223,29 +223,32 @@ def CreateModel():
 
     model.add(Convolution2D(24, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
-    model.add(Dropout(0.2))
+    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
-    model.add(Dropout(0.2))
+    #model.add(Dropout(0.2))
 
-    model.add(Convolution2D(48, 5, 5, subsample=(2, 2), init='uniform'))
+    model.add(Convolution2D(48, 5, 5, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    model.add(Dropout(0.2))
-
-    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
-    model.add(ELU())
-    model.add(Dropout(0.2))
+    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    model.add(Dropout(0.2))
+    #model.add(Dropout(0.2))
+
+    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
+    model.add(ELU())
+    #model.add(Dropout(0.2))
+
+    model.add(Convolution2D(128, 3, 3, subsample=(1, 1), init='uniform'))
+    model.add(ELU())
 
     print("Creating FC Model")
 
     model.add(Flatten())
 
-    model.add(Dense(200, init='uniform'))
+    model.add(Dense(200, init='uniform', W_regularizer=l2(.001)))
     model.add(ELU())
     model.add(Dropout(0.4))
 
