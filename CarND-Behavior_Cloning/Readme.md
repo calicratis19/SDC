@@ -109,4 +109,6 @@ After the collection process, I had around 100K number of data points. I then pr
 
 I finally randomly shuffled the data set which will be used for training only. Also I have another data set which were manually generated for validation purpose. The same preprocessing is done for this validation data but no augmentation.
 
-I used this training data for training the model. Although I don't think validation set is doing anything useful in this project I kept it. The ideal number of epochs was 19 where training loss was .0650. The car was able to drive on both tracks successfully.
+I used this training data for training the model. Although I don't think validation set is doing anything useful in this project I kept it. The ideal number of epochs was 19 where training loss was .0650. The training loss goes down to .02 on 40 epochs but it had overfitted. The car was able to drive on both tracks successfully with usual and full speed (by changing throttle=.3 in drive.py). Below is the link of the video of the car running on two tracks.
+
+https://youtu.be/F7v7l6YEFjo
