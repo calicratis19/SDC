@@ -39,47 +39,50 @@ imageHeight = 64
 def trans_angle(steer):
 
     """
-    translate image and compensate for the translation on the steering angle
+    calculate the angle after translation
     """
-    trans_range = 50
-    # horizontal translation with 0.008 steering compensation per pixel
-    tr_x = trans_range * np.random.uniform() - trans_range / 2
-    steer_ang = steer + tr_x / trans_range * .2
+    translationRange = 50
+    # horizontal translation
+    xTranslation = translationRange * np.random.uniform() - translationRange / 2
+    steer += xTranslation / translationRange * .2
 
-    if(steer_ang > 1):
-        steer_ang = 1
-    elif(steer_ang < -1):
-        steer_ang = -1
+    if(steer > 1):
+        steer = 1
+    elif(steer < -1):
+        steer = -1
 
-    return steer_ang
+    return steer
 
 def trans_image(dir, steer):
     img = cv2.imread(dir)  # opencv opens images in BGR format
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert to standard RGB
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert to HSV
 
     """
-    translate image and compensate for the translation on the steering angle
+    translate image and change the steering angle accordingly
     """
-    # print(image.shape)
-    rows, cols, chan = img.shape
+
+    rows, cols, _ = img.shape
     trans_range = 50
 
     # horizontal translation with 0.008 steering compensation per pixel
-    tr_x = trans_range * np.random.uniform() - trans_range / 2
-    steer_ang = steer + tr_x / trans_range * .2
+    xTranslation = trans_range * np.random.uniform() - trans_range / 2
+    steer += xTranslation / trans_range * .2
 
-    Trans_M = np.float32([[1, 0, tr_x], [0, 1, 0]])
-    img = cv2.warpAffine(img, Trans_M, (cols, rows))
+    translationMatrix = np.float32([[1, 0, xTranslation], [0, 1, 0]])
+    img = cv2.warpAffine(img, translationMatrix, (cols, rows))
+
     img = CropImage(img)
     img = cv2.resize(img, (imageWidth, imageHeight))
     img = np.reshape(img, (1, imageHeight, imageWidth, 3))
-    return img, steer_ang
+
+    return img, steer
 
 
 def CropImage(image):
+    #Crops the iamge so that the hood of the car and top of the image
+    #which contains sky trees and other stuffs are removed.
     height = len(image)
     return image[int(height * xCropUp):int(height * xCropBottom), :, :]
-
 
 def ReadAndProcessImage(path):
     img = cv2.imread(path)  # opencv opens images in BGR format
@@ -95,7 +98,7 @@ def RandomBrightness(img):
     img[:, :, :, 2] = img[:, :, :, 2] * scale
     return img
 
-def ValidDataGenerator(dir, batchSize):
+def ValidDataGenerator(batchSize):
 
     dir = './session_data/'
     with open(dir + 'driving_log.csv', 'r') as drivingLog:
@@ -136,7 +139,7 @@ def ValidDataGenerator(dir, batchSize):
                     batchx, batchy = [], []
         print('\n Valid: negative: ', negative, ' positive: ', positive, ' zero: ', zero)
 
-def DataGenerator(dir, batchSize):
+def TrainDataGenerator(batchSize):
     dir = './data/'
     with open(dir + 'driving_log.csv', 'r') as drivingLog:
         reader = csv.reader(drivingLog)
@@ -195,6 +198,7 @@ def DataGenerator(dir, batchSize):
                             img = ReadAndProcessImage(dir + file)
                             batchx.append(img)
                             batchy.append(steering)
+                    #Translate image if it doesn't break the balance between positive and neagative number of data.
                     steeringTemp = trans_angle(steering)
                     if (negative > positive and steeringTemp > 0) or (negative < positive and steeringTemp < 0):
                         img, steering = trans_image(dir + file, steering)
@@ -210,40 +214,34 @@ def DataGenerator(dir, batchSize):
                 if len(batchx) >= batchSize:
                     yield (shuffle(np.vstack(batchx),np.vstack(batchy)))
                     batchx, batchy = [], []
-                #break
-
-        #print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/20)
 
 
 def CreateModel():
+
     print("Creating Convnet Model")
+
     input_shape = (imageHeight, imageWidth, 3)
+
     model = Sequential()
     model.add(Lambda(lambda x: x / 255 - 0.5, input_shape=input_shape))
 
     model.add(Convolution2D(24, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(48, 5, 5, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(128, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     model.add(Convolution2D(128, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
 
     print("Creating FC Model")
 
@@ -266,31 +264,26 @@ def CreateModel():
 
     model.add(Dense(1, init='uniform', W_regularizer=l2(.001)))
 
-    #model.load_weights('./model.h5')
-
     return model
-
-
-# with open('model.json', 'r') as file:
-#    model = model_from_json(json.loads(file.read()))
-#    model.load_weights('model.h5')
 
 model = CreateModel()
 
 adam = Adam(lr=0.0001)
 model.compile(optimizer=adam, loss="mse")
 
-#validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
-trainGenerator = DataGenerator('./data/', trainBatchSize)
+validGenerator = ValidDataGenerator(validationBatchSize)
+trainGenerator = TrainDataGenerator(trainBatchSize)
 
-print("Created generator and starting training")
 weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}.h5', monitor='loss', verbose=2, save_best_only=False, mode='auto')
 model.summary()
+
+print("Created generator and call backs. Starting training")
+
 model.fit_generator(
     trainGenerator,
     samples_per_epoch=train_samples_per_epoch, nb_epoch=40,
- #   validation_data=validGenerator,
-  #  nb_val_samples=valid_samples_per_epoch,
+    validation_data=validGenerator,
+    nb_val_samples=valid_samples_per_epoch,
     callbacks=[weight_save_callback],
     verbose=1
 )
@@ -298,4 +291,3 @@ model.fit_generator(
 model.save_weights('model.h5', True)
 with open('model.json', 'w') as file:
     json.dump(model.to_json(), file)
-
