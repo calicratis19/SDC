@@ -14,7 +14,7 @@ The goals / steps of this project are the following:
 [image2]: ./images/center.jpg "Center camera image"
 [image3]: ./images/left.jpg "Left camera image"
 [image4]: ./images/right.jpg "Right camera image"
-[image5]: ./images/distribution.png "Data distribution"
+[image5]: ./images/distribution.PNG "Data distribution"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -28,7 +28,7 @@ My project includes the following files:
 * model.py containing the script to create and train the model
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network
-* Readme.md or writeup_report.pdf summarizing the results
+* Readme.md summarizing the results
 
 ####2. Submssion includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing
@@ -84,7 +84,7 @@ At the end of the process, the vehicle is able to drive autonomously around both
 
 My model consists of a convolution neural network with 6 convolution layers and 5 fully connected layers. First 3 layers has 5x5 filter sizes and others has 3x3 filter sizes. It has a depths between 24 and 128 (model.py lines 219-267). It has ~567K trainable parameters.
 
-Here is a visualization of the architecture.
+Here is a summary of the architecture.
 
 ![][image1]
 
@@ -107,7 +107,7 @@ I tried to create a balanced training set which has equal number of positive and
 
 After the collection process, I had around 100K number of data points. I then preprocessed this data by cropping 20% of the top portion of the image and 12.5% of bottom portion of the image to remove the hood of the car and blue sky or other artifacts. Then I resized the image to 64x64 size. I have also transformed the image to HSV format.
 
-I finally randomly shuffled the data set which will be used for training only. Also I have another data set which were manually generated for validation purpose. The same preprocessing is done for this validation data but no augmentation.
+I randomly shuffled the data set which will be used for training only. Also I have another data set which were manually generated for validation purpose. The same preprocessing is done for this validation data but no augmentation.
 
 I used this training data for training the model. Although I don't think validation set is doing anything useful in this project I kept it. The ideal number of epochs was 19 where training loss was .0650. The training loss goes down to .02 on 40 epochs but it had overfitted. The car was able to drive on both tracks successfully with usual and full speed (by changing throttle=.3 in drive.py). Below is the link of the video of the car running on two tracks.
 
