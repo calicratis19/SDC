@@ -28,15 +28,12 @@ train_samples_per_epoch = 20032
 valid_samples_per_epoch = 16384
 trainBatchSize = 128
 validationBatchSize = 128
-mean = 83.587824273  # Pre Calculated
 
 xCropUp = .20  # % of crop
 xCropBottom = .875  #
 
 imageWidth = 64
 imageHeight = 64
-negative = 0
-positive = 0
 
 
 def trans_angle(steer):
@@ -144,29 +141,9 @@ def DataGenerator(dir, batchSize):
     with open(dir + 'driving_log.csv', 'r') as drivingLog:
         reader = csv.reader(drivingLog)
         drivingLog = list(reader)
-    '''dir = './data1/'
-    with open(dir + 'driving_log.csv', 'r') as drivingLog1:
-        reader = csv.reader(drivingLog1)
-        drivingLog = list(reader) + drivingLog
-    dir = './data2/'
-    with open(dir + 'driving_log.csv', 'r') as drivingLog1:
-        reader = csv.reader(drivingLog1)
-        drivingLog = list(reader) + drivingLog
-    dir = './data3/'
-    with open(dir + 'driving_log.csv', 'r') as drivingLog1:
-        reader = csv.reader(drivingLog1)
-        drivingLog = list(reader) + drivingLog
-    dir = './session_data/'
-    with open(dir + 'driving_log.csv', 'r') as drivingLog1:
-        reader = csv.reader(drivingLog1)
-        drivingLog = list(reader) + drivingLog
-    drivingLog = shuffle(drivingLog)'''
 
-    global negative
-    global positive
     negative = 0
     positive = 0
-
     zero = 0
 
     while True:
@@ -212,9 +189,9 @@ def DataGenerator(dir, batchSize):
                     positive += 2
                     negative += 2
                 else:
-                    if steering == 0 :
-                        zero+=1
-                        if zero % 10 == 0:
+                    if zero % 10 == 0 :
+                        if steering == 0 :
+                            zero+=1
                             img = ReadAndProcessImage(dir + file)
                             batchx.append(img)
                             batchy.append(steering)
@@ -235,7 +212,7 @@ def DataGenerator(dir, batchSize):
                     batchx, batchy = [], []
                 #break
 
-        print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/20)
+        #print('\n Train negative: ', negative, ' positive: ', positive, ' zero: ', zero/20)
 
 
 def CreateModel():
@@ -268,18 +245,19 @@ def CreateModel():
 
     model.add(Flatten())
 
-    #model.add(Dense(1164, init='he_normal'))
-    #model.add(ELU())
+    model.add(Dense(200, init='uniform'))
+    model.add(ELU())
+    model.add(Dropout(0.4))
 
-    model.add(Dense(100, init='uniform'))
+    model.add(Dense(80, init='uniform', W_regularizer=l2(.001)))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Dense(50, init='uniform'))
+    model.add(Dense(50, init='uniform', W_regularizer=l2(.001)))
     model.add(ELU())
     model.add(Dropout(0.2))
 
-    model.add(Dense(10, init='uniform', W_regularizer=l2(.0001)))
+    model.add(Dense(10, init='uniform', W_regularizer=l2(.001)))
     model.add(ELU())
     model.add(Dropout(0.2))
 
@@ -299,7 +277,7 @@ model = CreateModel()
 adam = Adam(lr=0.0001)
 model.compile(optimizer="adam", loss="mse")
 
-validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
+#validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
 trainGenerator = DataGenerator('./data/', trainBatchSize)
 
 print("Created generator and starting training")
@@ -308,8 +286,8 @@ model.summary()
 model.fit_generator(
     trainGenerator,
     samples_per_epoch=train_samples_per_epoch, nb_epoch=20,
-    validation_data=validGenerator,
-    nb_val_samples=valid_samples_per_epoch,
+ #   validation_data=validGenerator,
+  #  nb_val_samples=valid_samples_per_epoch,
     callbacks=[weight_save_callback],
     verbose=1
 )
