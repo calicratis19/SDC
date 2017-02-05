@@ -24,7 +24,7 @@ from keras.models import model_from_json
 
 from keras.callbacks import ModelCheckpoint
 
-train_samples_per_epoch = 10016
+train_samples_per_epoch = 2560
 valid_samples_per_epoch = 16384
 trainBatchSize = 128
 validationBatchSize = 128
@@ -288,7 +288,7 @@ weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}
 model.summary()
 model.fit_generator(
     trainGenerator,
-    samples_per_epoch=train_samples_per_epoch, nb_epoch=20,
+    samples_per_epoch=train_samples_per_epoch, nb_epoch=40,
  #   validation_data=validGenerator,
   #  nb_val_samples=valid_samples_per_epoch,
     callbacks=[weight_save_callback],
