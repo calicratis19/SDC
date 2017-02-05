@@ -278,7 +278,7 @@ def CreateModel():
 model = CreateModel()
 
 adam = Adam(lr=0.0001)
-model.compile(optimizer="adam", loss="mse")
+model.compile(optimizer=adam, loss="mse")
 
 #validGenerator = ValidDataGenerator('./session_data/',validationBatchSize)
 trainGenerator = DataGenerator('./data/', trainBatchSize)
