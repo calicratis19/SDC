@@ -227,22 +227,23 @@ def CreateModel():
 
     model.add(Convolution2D(36, 5, 5, subsample=(2, 2), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(48, 5, 5, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
-    #model.add(Dropout(0.2))
-
-    model.add(Convolution2D(64, 3, 3, subsample=(1, 1), init='uniform'))
-    model.add(ELU())
-    #model.add(Dropout(0.2))
+    model.add(Dropout(0.2))
 
     model.add(Convolution2D(128, 3, 3, subsample=(1, 1), init='uniform'))
     model.add(ELU())
+    model.add(Dropout(0.2))
+
+    model.add(Convolution2D(128, 3, 3, subsample=(1, 1), init='uniform'))
+    model.add(ELU())
+    model.add(Dropout(0.2))
 
     print("Creating FC Model")
 
