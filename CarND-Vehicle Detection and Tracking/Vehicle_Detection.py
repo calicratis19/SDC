@@ -27,12 +27,28 @@ from sklearn.model_selection import train_test_split
 
 import pandas as pd
 
-rootDir = "object-detection-crowdai"
-csvFile = pd.read_csv(rootDir+'/labels.csv', header=0)
+rootDir = "object-detection-crowdai/"
+csvFile = pd.read_csv(rootDir+'labels.csv', header=0)
 dataFile = csvFile[(csvFile['Label']!='Pedestrian')].reset_index()
 dataFile = dataFile.drop('index', 1)
 dataFile = dataFile.drop('Preview URL', 1)
-dataFile.head()
+dataFile['Frame'] = './' + rootDir + dataFile['Frame']
+
+print('first len: ',len(dataFile))
+names = ['Frame',  'xmin', 'xmax', 'ymin','ymax', 'occluded', 'Label']
+rootDir = "object-dataset/"
+csvFile1 = pd.read_csv(rootDir+'labels.csv', delim_whitespace=True, names=names)
+dataFile1 = csvFile1[(csvFile1['Label']!='Pedestrian')].reset_index()
+dataFile1 = dataFile1.drop('index',1)
+dataFile1 = dataFile1.drop('occluded',1)
+dataFile1['Frame'] = './' + rootDir + dataFile1['Frame']
+#dataFile1.head()
+print('second len: ',len(dataFile1))
+
+dataFile = pd.concat([dataFile,dataFile1]).reset_index()
+dataFile.columns  = ['index','Frame','Label','ymin','xmin','ymax','xmax']
+#dataFile.head()
+print((dataFile.head()))
 
 train_samples_per_epoch = 10000
 valid_samples_per_epoch = 16384
@@ -52,14 +68,12 @@ def dice_coef(y_true, y_pred):
 def dice_coef_loss(y_true, y_pred):
     return -dice_coef(y_true, y_pred)
 
-def TrainDataGenerator(dataInfo, batchSize, rootDir):
+def TrainDataGenerator(dataInfo, batchSize):
     batch_x, batch_y = [], []
     while True:
         row = np.random.randint(len(dataInfo))
-        #while row < len(dataInfo):
 
-        fileName = './' + rootDir + '/' + dataInfo['Frame'][row]
-        # print(fileName, row)
+        fileName = dataInfo['Frame'][row]
         img = cv2.imread(fileName)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         origShape = img.shape
@@ -73,23 +87,17 @@ def TrainDataGenerator(dataInfo, batchSize, rootDir):
 
         targetImg = np.reshape(np.zeros_like(img[:, :, 2]), (imgRow, imgCol, 1))
         for i in range(len(data)):
-            targetImg[data.iloc[i]['xmax']:data.iloc[i]['ymax'], data.iloc[i]['xmin']:data.iloc[i]['ymin']] = 1
-            cv2.rectangle(img, (int(data.iloc[i]['xmin']), int(data.iloc[i]['xmax'])),
-                          (int(data.iloc[i]['ymin']), int(data.iloc[i]['ymax'])), (0, 0, 255), 6)
-            # print(data.iloc[i]['xmin'],data.iloc[i]['xmax'], data.iloc[i]['ymin'],data.iloc[i]['ymax'])
+            targetImg[data.iloc[i]['ymin']:data.iloc[i]['ymax'], data.iloc[i]['xmin']:data.iloc[i]['xmax']] = 1
 
-        row += len(data) - 1
-
-        batch_x.append(img/127.5 - 1.)
+        batch_x.append(img)
         batch_y.append(targetImg)
 
-        if (len(batch_x) == batchSize):
-            # yield (np.vstack(batch_x),np.vstack(batch_y))
+        if len(batch_x) == batchSize:
             x_array = np.asarray(batch_x)
             y_array = np.asarray(batch_y)
             yield (x_array, y_array)
             batch_x, batch_y = [], []
-        row += 1
+
 
 
 def CreateModel():
@@ -144,7 +152,7 @@ def CreateModel():
 
 model = CreateModel()
 
-trainGenerator = TrainDataGenerator(dataFile, trainBatchSize, rootDir)
+trainGenerator = TrainDataGenerator(dataFile, trainBatchSize)
 
 weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}.h5', monitor='loss', verbose=2,
                                        save_best_only=False, mode='auto')
