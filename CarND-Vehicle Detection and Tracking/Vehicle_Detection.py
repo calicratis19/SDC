@@ -27,14 +27,16 @@ from sklearn.model_selection import train_test_split
 
 import pandas as pd
 
+#Reading the first data set from crowd-ai
 rootDir = "object-detection-crowdai/"
 csvFile = pd.read_csv(rootDir+'labels.csv', header=0)
 dataFile = csvFile[(csvFile['Label']!='Pedestrian')].reset_index()
 dataFile = dataFile.drop('index', 1)
 dataFile = dataFile.drop('Preview URL', 1)
 dataFile['Frame'] = './' + rootDir + dataFile['Frame']
+print('first data set len: ',len(dataFile))
 
-print('first len: ',len(dataFile))
+#Reading the second data set.
 names = ['Frame',  'xmin', 'xmax', 'ymin','ymax', 'occluded', 'Label']
 rootDir = "object-dataset/"
 csvFile1 = pd.read_csv(rootDir+'labels.csv', delim_whitespace=True, names=names)
@@ -42,18 +44,14 @@ dataFile1 = csvFile1[(csvFile1['Label']!='Pedestrian')].reset_index()
 dataFile1 = dataFile1.drop('index',1)
 dataFile1 = dataFile1.drop('occluded',1)
 dataFile1['Frame'] = './' + rootDir + dataFile1['Frame']
-#dataFile1.head()
-print('second len: ',len(dataFile1))
+print('second dataset len: ',len(dataFile1))
 
 dataFile = pd.concat([dataFile,dataFile1]).reset_index()
 dataFile.columns  = ['index','Frame','Label','ymin','xmin','ymax','xmax']
-#dataFile.head()
-print((dataFile.head()))
+print('merged dataset len: ',len(dataFile))
 
 train_samples_per_epoch = 10000
-valid_samples_per_epoch = 16384
 trainBatchSize = 16
-validationBatchSize = 8
 imgRow = 512
 imgCol = 768
 smooth = 1.
