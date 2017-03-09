@@ -21,7 +21,7 @@ from keras.models import model_from_json
 import simplejson as json
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
-
+import random
 
 ### Make data frame in Pandas
 
@@ -30,25 +30,26 @@ import pandas as pd
 #Reading the first data set from crowd-ai
 rootDir = "object-detection-crowdai/"
 csvFile = pd.read_csv(rootDir+'labels.csv', header=0)
+
 dataFile = csvFile[(csvFile['Label']!='Pedestrian')].reset_index()
 dataFile = dataFile.drop('index', 1)
 dataFile = dataFile.drop('Preview URL', 1)
 dataFile['Frame'] = './' + rootDir + dataFile['Frame']
+dataFile.columns = ['xmin', 'ymin', 'xmax','ymax', 'Frame', 'Label']
+dataFile.head(10)
 print('first data set len: ',len(dataFile))
 
 #Reading the second data set.
-names = ['Frame',  'xmin', 'xmax', 'ymin','ymax', 'occluded', 'Label']
+names = ['Frame',  'xmin', 'ymin', 'xmax','ymax', 'occluded', 'Label']
 rootDir = "object-dataset/"
 csvFile1 = pd.read_csv(rootDir+'labels.csv', delim_whitespace=True, names=names)
-dataFile1 = csvFile1[(csvFile1['Label']!='Pedestrian')].reset_index()
+dataFile1 = csvFile1[(csvFile1['Label']!=str.lower('Pedestrian'))].reset_index()
 dataFile1 = dataFile1.drop('index',1)
 dataFile1 = dataFile1.drop('occluded',1)
 dataFile1['Frame'] = './' + rootDir + dataFile1['Frame']
+dataFile1.tail(10)
 print('second dataset len: ',len(dataFile1))
 
-dataFile = pd.concat([dataFile,dataFile1]).reset_index()
-dataFile.columns  = ['index','Frame','Label','ymin','xmin','ymax','xmax']
-print('merged dataset len: ',len(dataFile))
 
 train_samples_per_epoch = 10000
 trainBatchSize = 16
@@ -66,9 +67,10 @@ def dice_coef(y_true, y_pred):
 def dice_coef_loss(y_true, y_pred):
     return -dice_coef(y_true, y_pred)
 
-def TrainDataGenerator(dataInfo, batchSize):
+def TrainDataGenerator(dataInfoList,batchSize):
     batch_x, batch_y = [], []
     while True:
+        dataInfo = dataInfoList[random.randint(0, 1)]
         row = np.random.randint(len(dataInfo))
 
         fileName = dataInfo['Frame'][row]
@@ -118,10 +120,6 @@ def CreateModel():
 
     conv4 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(pool3)
     conv4 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(conv4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
-
-    # conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(pool4)
-    # conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(conv5)
 
     up5 = merge([UpSampling2D(size=(2, 2))(conv4), conv3], mode='concat', concat_axis=3)
     conv5 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(up5)
@@ -150,7 +148,7 @@ def CreateModel():
 
 model = CreateModel()
 
-trainGenerator = TrainDataGenerator(dataFile, trainBatchSize)
+trainGenerator = TrainDataGenerator((dataFile,dataFile1), trainBatchSize)
 
 weight_save_callback = ModelCheckpoint('./weights/weights.{epoch:02d}-{loss:.4f}.h5', monitor='loss', verbose=2,
                                        save_best_only=False, mode='auto')
