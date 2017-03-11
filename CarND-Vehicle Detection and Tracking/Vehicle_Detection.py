@@ -22,6 +22,7 @@ import simplejson as json
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 import random
+import math
 
 ### Make data frame in Pandas
 
@@ -53,9 +54,22 @@ print('second dataset len: ',len(dataFile1))
 
 train_samples_per_epoch = 10000
 trainBatchSize = 16
-imgRow = 512
-imgCol = 768
+imgRow = 630
+imgCol = 960
+croppedImgRow = math.floor((imgRow*6)/7)-math.floor((imgRow*2)/5)
+croppedImgCol = 960
 smooth = 1.
+
+def CropImage(image):
+    #Crops the iamge so that the hood of the car and top of the image
+    #which contains sky trees and other stuffs are removed.
+    height = len(image)
+    return image[int(height * 2/5.):int(height * 6/7.0), :, :]
+
+def RandomBrightness(img):
+    scale = random.uniform(.7, 1.25)
+    img[:, :, :, 2] = img[:, :, :, 2] * scale
+    return img
 
 def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
@@ -89,6 +103,8 @@ def TrainDataGenerator(dataInfoList,batchSize):
         for i in range(len(data)):
             targetImg[data.iloc[i]['ymin']:data.iloc[i]['ymax'], data.iloc[i]['xmin']:data.iloc[i]['xmax']] = 1
 
+        img = CropImage(img)
+        targetImg = CropImage(targetImg)
         batch_x.append(img)
         batch_y.append(targetImg)
 
@@ -101,7 +117,7 @@ def TrainDataGenerator(dataInfoList,batchSize):
 
 
 def CreateModel():
-    input_layer = Input((imgRow, imgCol, 3))
+    input_layer = Input((croppedImgRow, croppedImgCol, 3))
     conv0 = Convolution2D(8, 3, 3, activation='relu', border_mode='same')(input_layer)
     conv0 = Convolution2D(8, 3, 3, activation='relu', border_mode='same')(conv0)
     pool0 = MaxPooling2D(pool_size=(2, 2))(conv0)
@@ -120,8 +136,16 @@ def CreateModel():
 
     conv4 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(pool3)
     conv4 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
-    up5 = merge([UpSampling2D(size=(2, 2))(conv4), conv3], mode='concat', concat_axis=3)
+    conv4_0 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(pool4)
+    conv4_0 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(conv4_0)
+
+    up5_0 = merge([UpSampling2D(size=(2, 2))(conv4_0), conv4], mode='concat', concat_axis=3)
+    conv5_0 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(up5_0)
+    conv5_0 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(conv5_0)
+
+    up5 = merge([UpSampling2D(size=(2, 2))(conv5_0), conv3], mode='concat', concat_axis=3)
     conv5 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(up5)
     conv5 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(conv5)
 
