@@ -2,7 +2,7 @@
 [image1]: ./images/Read_Data.JPG
 [image2]: ./images/Cropped.JPG
 [image3]: ./images/Target_Mask.JPG
-[image4]: ./images/Unet.PNG
+[image4]: ./images/Unet.png
 [image5]: ./images/model.JPG
 [image6]: ./images/IOU.JPG
 [image7]: ./images/pred1.PNG
