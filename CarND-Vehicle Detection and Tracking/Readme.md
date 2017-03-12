@@ -32,7 +32,7 @@ I have used Udacity provided [4.5 GB](https://github.com/udacity/self-driving-ca
 
 1) The csv file has error in the column names corresponding to the bounding boxes. We had to fix this problem to correctly read the csv file. Also the annotated rectangles were implemented through machine learning and human help. There are cases where images are not detected properly or wrongly detected. We could not do anything these cases.
 
-2) The data set is separated into two separate folders. So we read them in two separate pandas DataFrame. The data set contains 3 classes of objects: Car, Track and Pedestrians. We removed the Pedestrian classes and merged car and track objects into one single class. Refer to the line 31 to 51 in the Vehicle_Detection.py file.
+2) The data set is separated into two separate folders. So we read them in two separate pandas DataFrame. The data set contains 3 classes of objects: Car, Track and Pedestrians. We removed the Pedestrian classes and merged car and track objects into one single class. Refer to the line 31 to 51 in the Vehicle_Detection.py file. For Visualization please refer to the 4th,5th and 6th cell of the Jupyter notebook.
 
 ![alt text][image1]
 
@@ -73,6 +73,7 @@ Resize Image Column = 960
 Cropped Image Row = 288
 Cropped Image Column = 960
 Learning Rate = .0001
+EPOCH = 40
 
 We could not fit more than 16 batch size of images because of the limitation of GPU memory(8GB). With learning rate .00001 the model performed very poorly. We have used sigmoid activation function for the last layer because we wanted a pixel wise probability of being a car. Also we have used IOU(intersection of union) also known as [dice coefficient](https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient) for loss function and accuracy matrix. This is simply taking 2 times intersection of two images meaning (pixel wise value multiplication of two images and summation)x2 divided by union of two images meaning summation of all the pixel values in two images. Please refer to the function dice_coef() in the python file. Visualization is given below,
 
@@ -87,7 +88,7 @@ We have two data sets from Udacity in separate folders with csv file having sepa
 
 **Result**
 
-We reached IOU value of 93%. But that was not the final training step. We had to run 9 more iterations to achieve the best model.
+We reached IOU value of 93% at 40 iterations. But that was not the final training step. We had to run 9 more iterations to achieve the best model. Below is the result of the last few iteration of the first 40 iterations.
 
 ![alt text][image10]
 
@@ -95,10 +96,9 @@ In a lot of cases the model could detect cars that were not annotated correctly 
 
 ![alt text][image11]
 
-The model performs realtime prediction on the video. With my model I achieved 26FPS. For 50s video stream the model finishes it in 48 seconds.
+The model performs realtime prediction on the video. With my model I achieved 26FPS. For 50s video stream the model finishes it in 48 seconds. Please see from the 9th to last cell in the notebook.
 
 Here is the link of the pipeline applied to a video. I have put a darker shade on the region of the video where I ran my prediction.
-
 
 My model on project video.
 
