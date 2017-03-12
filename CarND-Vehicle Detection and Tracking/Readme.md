@@ -5,9 +5,9 @@
 [image4]: ./images/Unet.png
 [image5]: ./images/model.JPG
 [image6]: ./images/IOU.JPG
-[image7]: ./images/pred1.PNG
-[image8]: ./images/pred2.PNG
-[image9]: ./images/pred3.PNG
+[image7]: ./images/pred1.png
+[image8]: ./images/pred2.png
+[image9]: ./images/pred3.png
 [image10]: ./images/almost_unet.PNG
 [image11]: ./images/better_than_human.png
 
