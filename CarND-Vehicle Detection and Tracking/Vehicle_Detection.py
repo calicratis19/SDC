@@ -67,8 +67,10 @@ def CropImage(image):
     return image[int(height * 2/5.):int(height * 6/7.0), :, :]
 
 def RandomBrightness(img):
-    scale = random.uniform(.7, 1.25)
-    img[:, :, :, 2] = img[:, :, :, 2] * scale
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    scale = random.uniform(1, 1.5)
+    img[:, :, 2] = img[:, :, 2] * scale
+    img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
     return img
 
 def dice_coef(y_true, y_pred):
@@ -103,7 +105,7 @@ def TrainDataGenerator(dataInfoList,batchSize):
         for i in range(len(data)):
             targetImg[data.iloc[i]['ymin']:data.iloc[i]['ymax'], data.iloc[i]['xmin']:data.iloc[i]['xmax']] = 1
 
-        img = CropImage(img)
+        img = RandomBrightness(CropImage(img))
         targetImg = CropImage(targetImg)
         batch_x.append(img)
         batch_y.append(targetImg)
@@ -181,7 +183,7 @@ model.summary()
 #model.load_weights('model.h5')
 
 print("Created generator and call backs. Starting training")
-
+'''
 model.fit_generator(
     trainGenerator,
     samples_per_epoch=train_samples_per_epoch, nb_epoch=40,
@@ -189,8 +191,10 @@ model.fit_generator(
     # nb_val_samples=valid_samples_per_epoch,
     callbacks=[weight_save_callback],
     verbose=1
-)
+)'''
 
 model.save_weights('model.h5', True)
 with open('model.json', 'w') as file:
     json.dump(model.to_json(), file)
+
+#https://s3.amazonaws.com/udacity-sdc/annotations/object-detection-crowdai.tar.gz
