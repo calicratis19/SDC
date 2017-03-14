@@ -119,3 +119,7 @@ My model doesn't do well with the shadowed regions. It tries to detect shadow as
 **Further Improvement**
 
 I would try to introduce much more augmentation like translation and stretching. I am also going to implement other models like YOLO, SSD etc.
+
+**Acknowledgment:**
+
+Special thanks to Vivek Yadav for his blogs and sharing his github profile.
