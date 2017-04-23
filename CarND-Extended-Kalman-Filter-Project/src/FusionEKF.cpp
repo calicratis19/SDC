@@ -81,8 +81,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 			ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
 		}
 		else
-			ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1],
+		{
+			double rho = measurement_pack.raw_measurements_[0];
+			double phi = measurement_pack.raw_measurements_[1];
+			double rhodot = measurement_pack.raw_measurements_[2];
+			ekf_.x_ << rho*cos(phi), rho*sin(phi),
 			measurement_pack.raw_measurements_[2], 0;
+		}
 
 
 		previous_timestamp_ = measurement_pack.timestamp_;
