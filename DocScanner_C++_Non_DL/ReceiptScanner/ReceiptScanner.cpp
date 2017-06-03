@@ -57,7 +57,7 @@ VMat ReceiptScanner::DetectReceipt(const vector<string>& imagePath)
 			for (Point _point : _vp)
 			{
 				_points.push_back(_point);
-				//cout << _point.x << " " << _point.y << endl;
+				
 			}
 		}
 
@@ -68,11 +68,14 @@ VMat ReceiptScanner::DetectReceipt(const vector<string>& imagePath)
 		}
 
 		_points = OrderPoints(_points);
+		Matrix _maskedImage = imgOriginal.clone();
 
 		cv::line(imgOriginal, _points[0], _points[1], _color, 10);
 		cv::line(imgOriginal, _points[1], _points[2], _color, 10);
 		cv::line(imgOriginal, _points[2], _points[3], _color, 10);
 		cv::line(imgOriginal, _points[3], _points[0], _color, 10);
+
+		MaskBackGround(_points, _maskedImage);
 		_imageList.push_back(imgOriginal);
 
 		cout << _points[0].x << " " << _points[0].y << endl;
@@ -80,7 +83,7 @@ VMat ReceiptScanner::DetectReceipt(const vector<string>& imagePath)
 		cout << _points[2].x << " " << _points[2].y << endl;
 		cout << _points[3].x << " " << _points[3].y << endl;
 
-		Show(imgOriginal,"Final Output");		
+		Show(imgOriginal,"Final Output", _maskedImage, "Masked output");
 
 	}	
 	return _imageList;
@@ -141,9 +144,38 @@ VPoint ReceiptScanner::OrderPoints(const VPoint _points)
 	return _rect;
 }
 
-void ReceiptScanner::Show(const Matrix& _img, const string& _name)const
+void ReceiptScanner::MaskBackGround(const VPoint _points, Matrix& img)const
+{
+
+	Util::Point _polygon[4];
+	for (int k = 0; k < 4; k++)
+	{
+		_polygon[k] = { _points[k].x,img.rows - _points[k].y };
+	}
+
+	
+	Util::Point _point;
+	for (int i = 0;i < img.cols;i++)
+	{
+		for (int j = 0; j < img.rows;j++)
+		{
+			_point = Util::Point(j,img.cols-i);
+			
+			if (!Util::pnpoly(4,_polygon, _point))
+			{
+				img.at<cv::Vec3b>(i, j)[0] = 0;
+				img.at<cv::Vec3b>(i, j)[1] = 0;
+				img.at<cv::Vec3b>(i, j)[2] = 0;
+			}
+			
+		}
+	}
+}
+
+void ReceiptScanner::Show(const Matrix& _img, const string& _name, const Matrix& _maskedImg, const string& _nameMasked)const
 {
 	cv::imshow(_name, _img);
+	cv::imshow(_nameMasked, _maskedImg);
 	cv::waitKey(0);
 	cv::destroyAllWindows();
 }

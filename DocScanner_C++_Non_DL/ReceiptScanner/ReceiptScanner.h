@@ -26,7 +26,8 @@ public:
 
 private:
 	VPoint OrderPoints(const VPoint _points);
-	void Show(const Matrix& _img, const string& _name)const;
+	void MaskBackGround(const VPoint _points, Matrix& img)const;
+	void Show(const Matrix& _img, const string& _name, const Matrix& _maskedImg, const string& _nameMasked)const;
 	
 };
 

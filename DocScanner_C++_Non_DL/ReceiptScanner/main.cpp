@@ -10,7 +10,7 @@ int main()
 	vector<string>_nameList;
 
 	int _numberOfImages = 150;	
-	for (int i =0; i <_numberOfImages; i++)
+	for (int i =2; i <_numberOfImages; i++)
 	{
 		_nameList.push_back(_imagePrefix+std::to_string(i+1)+_imagePostfix);		
 	}	
