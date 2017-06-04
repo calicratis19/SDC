@@ -23,7 +23,7 @@ In this project our goal is to create a pipeline to detect expense receipt in an
 
 **Overview**
 
-We used spatial color features of a receipt image and trained a Convolutional Neural Network to draw overlay on a receipt document in the image. This technique is much more robust than the traditional computer vision approach and generalize much better for unseen data.
+We used spatial color features of a receipt image and trained a Convolutional Neural Network to do pixel wise prediction to detect the receipt and remove the background. This technique is much more robust than the traditional computer vision approach and generalize much better for unseen data.
 
 The model I trained to achieve the goal is inspired from an famous CNN model called U-net. This model directly predicts a mask in an image. It has a special architecture. It first implements Convolutional layers which shrink the width and height and increases the depth of the feature map and then it implements merging layers which concatenates the Convolutional layers through an up-convolving process to finally achieve an image mask which contains the pixel wise prediction values to detect a receipt. This approach is inspired by a [prize winning submission on Kaggle ultrasound Nerve Segmentation competition challenge.](https://github.com/jocicmarko/ultrasound-nerve-segmentation)
 
