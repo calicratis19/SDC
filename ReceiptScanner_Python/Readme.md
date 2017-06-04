@@ -4,11 +4,11 @@
 [image3]: ./readmeImages/Augmentation2.png
 [image4]: ./readmeImages/Augmentation3.png
 [image5]: ./readmeImages/Unet.png
-[image6]: ./readmeImages/Model.png
+[image6]: ./readmeImages/Model.PNG
 [image7]: ./readmeImages/IOU.JPG
 [image8]: ./readmeImages/PostProcess1.png
 [image9]: ./readmeImages/PostProcess2.png
-[image10]: ./readmeImages/PostProcess3.PNG
+[image10]: ./readmeImages/PostProcess3.png
 [image11]: ./readmeImages/Epochs.PNG
 [image12]: ./readmeImages/result1.png
 [image13]: ./readmeImages/result2.png
@@ -76,9 +76,9 @@ We could not fit more than 30 batch size of images because of the limitation of 
 
 **PostProcessing**
 
-We have trained the model for 40 Epochs at first. Then we applied regularization on it and trained it on another 10 Epochs. We did post processing after we get the predicted mask. We saw that there are some small regions which were detected as receipt on images but are not. So to eliminate those regions we applied erosion and dilation morphing techniques on them. Using rectangular kernel after applying erosion many small regions gets disappear or get considerably small. But it also erodes the correctly detected receipt mask. So we applied dilation on it again.
+We have trained the model for 40 Epochs at first. Then we applied regularization on it and trained it on another 10 Epochs. We did post processing after we get the predicted mask. We saw that there are some small regions which were detected as receipt on images but are not. So to eliminate those regions we applied erosion and dilation morphing techniques on them. Using rectangular kernel after applying erosion many small regions gets disappear or get considerably small. But it also erodes the correctly detected receipt mask. So we applied dilation on it again. Please refer to the 14th cell of the notebook for implementation of the morphing techniques.
 
-After that we applied another post processing technique. We saw that there are disconnected regions that are detected as receipt. The actual detected receipt is the largest connected region on the prediction. So we applied a flood fill algorithm using BFS. This way we detect the largest connected region on the predicted mask and eliminate others. Some example of before post processing and after post processing are given below,
+After that we applied another post processing technique. We saw that there are disconnected regions that are detected as receipt. The actual detected receipt is the largest connected region on the prediction. So we applied a flood fill algorithm using BFS. This way we detect the largest connected region on the predicted mask and eliminate others. Please refer to the 13th cell of the notebook. Some example of before post processing and after post processing are given below,
 
 ![alt text][image8]
 ![alt text][image9]
