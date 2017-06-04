@@ -14,20 +14,20 @@
 [image13]: ./readmeImages/result2.png
 [image14]: ./readmeImages/result3.png
 
-**Receipt Scanner**
+***Receipt Scanner***
 
 The goals / steps of this project are the following:
 
 In this project our goal is to create a pipeline to detect expense receipt in an image and remove its background. One way to achieve this is to use traditional computer vision techniques like canny edge detection, color/gradient threshold etc. But in this project we applied state of the art deep learning based approach for receipt detection.
 
 
-**Overview**
+***Overview***
 
 We used spatial color features of a receipt image and trained a Convolutional Neural Network to do pixel wise prediction to detect the receipt and remove the background. This technique is much more robust than the traditional computer vision approach and generalize much better for unseen data.
 
 The model I trained to achieve the goal is inspired from an famous CNN model called U-net. This model directly predicts a mask in an image. It has a special architecture. It first implements Convolutional layers which shrink the width and height and increases the depth of the feature map and then it implements merging layers which concatenates the Convolutional layers through an up-convolving process to finally achieve an image mask which contains the pixel wise prediction values to detect a receipt. This approach is inspired by a [prize winning submission on Kaggle ultrasound Nerve Segmentation competition challenge.](https://github.com/jocicmarko/ultrasound-nerve-segmentation)
 
-**Data Preparation**
+***Data Preparation***
 
 I have load, process, trained and tested the model in the Receipt_Scanner.ipynb jupyter notebook file.
 
@@ -43,11 +43,11 @@ In the data set each JPG image has a corresponding PNG image which contains the 
 ![alt text][image4]
 
 
-**Target Dataset**
+***Target Dataset***
 
 From the mask images we know the shape of the receipt in the images. We load the mask as a numpy array of 512x512x1 dimension which gives us our image target mask. Refer to the *TrainDataGenerator* function at the 9th code cell of the Jupyter notebook.
 
-**Model**
+***Model***
 
 I didn't implement the full Unet model as it takes a lot of time to train. I have implemented a bit smaller size of it which also takes 20 minutes to  train on 15K images. The original Unet model architecture is the following,
 
@@ -59,7 +59,7 @@ I had to play around with the model a lot to come up with a decent mini model. F
 
 But still the model had false positives. It was performing on the training set very well but not so well on the test set. So I decided to add regularization on it. After applying l2 regularization the prediction became a lot better.
 
-**Training**
+***Training***
 
 The hyper parameters are,
 
@@ -74,17 +74,17 @@ We could not fit more than 30 batch size of images because of the limitation of 
 
 ![alt text][image7]
 
-**PostProcessing**
+***PostProcessing***
 
-We have trained the model for 40 Epochs at first. Then we applied regularization on it and trained it on another 10 Epochs. We did post processing after we get the predicted mask. We saw that there are some small regions which were detected as receipt on images but are not. So to eliminate those regions we applied erosion and dilation morphing techniques on them. Using rectangular kernel after applying erosion many small regions gets disappear or get considerably small. But it also erodes the correctly detected receipt mask. So we applied dilation on it again. Please refer to the 14th cell of the notebook for implementation of the morphing techniques.
+We have trained the model for 40 Epochs at first. Then we applied regularization on it and trained it on another 10 Epochs. We did post processing after we get the predicted mask. We saw that there are some small regions which were detected as receipt on images but are not. So to eliminate those regions we applied **erosion** and **dilation** morphing techniques on them. Using rectangular kernel after applying erosion many small regions gets disappear or get considerably small. But it also erodes the correctly detected receipt mask. So we applied dilation on it again. Please refer to the 14th cell of the notebook for implementation of the morphing techniques.
 
-After that we applied another post processing technique. We saw that there are disconnected regions that are detected as receipt. The actual detected receipt is the largest connected region on the prediction. So we applied a flood fill algorithm using BFS. This way we detect the largest connected region on the predicted mask and eliminate others. Please refer to the 13th cell of the notebook. Some example of before post processing and after post processing are given below,
+After that we applied another post processing technique. We saw that there are disconnected regions that are detected as receipt. The actual detected receipt is the largest connected region on the prediction. So we applied a flood fill algorithm using **Breadth First Search**. This way we detect the largest connected region on the predicted mask and eliminate others. Please refer to the 13th cell of the notebook. Some example of before post processing and after post processing are given below,
 
 ![alt text][image8]
 ![alt text][image9]
 ![alt text][image10]
 
-**Result**
+***Result***
 
 We reached IOU value of ~80% at 40 iterations. But that was not the final training step. We had to run 10 more iterations to achieve the best model which had 90% IOU. Below is the details of the last few iterations,
 
@@ -98,6 +98,6 @@ Some final prediction result with the background removed are following,
 
 Without the PostProcessing the model takes few hundred milliseconds to complete the prediction and remove the background. After applying postprocessing it takes like 2-3 seconds to complete the process.
 
-**Limitation**
+***Limitation***
 
-Although I applied augmentation heavily still the augmented images are very related. For this reason there are false positive predictions exists with the model. To achieve much better accuracy more data set is needed.
+Although I applied augmentation heavily still the augmented images are very related. For this reason there are false positive predictions exists with the model. To achieve much better accuracy more data set is needed. I believe with a large data set this model can achieve state of the art prediction accuracy on receipt detection.
