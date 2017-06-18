@@ -88,10 +88,10 @@ def TrainDataGenerator(dataInfo,batchSize):
         img = cv2.resize(img, (imgCol, imgRow))
 
         data = dataInfo[dataInfo['imagename'][row] == dataInfo['imagename']].reset_index()
-        data['toplefty'] = np.round(data['toplefty'] / origShape[1] * imgCol)
-        data['bottomrighty'] = np.round(data['bottomrighty'] / origShape[1] * imgCol)
-        data['topleftx'] = np.round(data['topleftx'] / origShape[0] * imgRow)
-        data['bottomrightx'] = np.round(data['bottomrightx'] / origShape[0] * imgRow)
+        data['toplefty'] = np.round(data['toplefty'] / origShape[1] * imgRow)
+        data['bottomrighty'] = np.round(data['bottomrighty'] / origShape[1] * imgROw)
+        data['topleftx'] = np.round(data['topleftx'] / origShape[0] * imgCol)
+        data['bottomrightx'] = np.round(data['bottomrightx'] / origShape[0] * imgCol)
 
         targetImg = np.reshape(np.zeros_like(img[:, :, 2]), (imgRow, imgCol, 1))
         for i in range(len(data)):
