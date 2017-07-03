@@ -22,8 +22,18 @@ This project uses `N=10` and `dt=0.15`. We have used N=10 so that it provides lo
 We have preprocessed the way points to vehicle's coordinate. This simplifies the way points to fit to a third order polynomial. This is so because after the Preprocessing the vehicle is the origin and its x, y and psi is 0.
 
 ## Latency
+In real world applying the actuations is not instant. It takes some times to propagate the actuation command through the system and execute on the real world. In this project we assume there is a 100ms delay between actuation calculation and actually applying it.
 
-To simulate 100 ms delay case we can apply the actuations of previous time stamp. This is because due to the delay, the actuation of roughly the previous timestamp is being applied on the current timestamp. So we just apply the previous actuation to mimic the latency.
+To simulate 100ms delay we need to simulate how the car's state and actuations will be updated in those 100ms and apply those values. The following is my calculation to do so,
+
+```
+          state[0] = v * cos(0) * 0.1;
+		  state[1] = v * sin(0) * 0.1;
+		  state[2] = (-v / 2.67) * delta * 0.1;
+		  state[3] = v ;//+ a * 0.1;
+		  state[4] = cte + v*sin(epsi)*0.1;
+		  state[5] = epsi - (v / 2.67) * delta * 0.1;
+```
 
 
 ## Dependencies
