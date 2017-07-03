@@ -27,7 +27,7 @@ In real world applying the actuations is not instant. It takes some times to pro
 To simulate 100ms delay we need to simulate how the car's state and actuations will be updated in those 100ms and apply those values. The following is my calculation to do so,
 
 ```
-          state[0] = v * cos(0) * 0.1;
+      state[0] = v * cos(0) * 0.1;
 		  state[1] = v * sin(0) * 0.1;
 		  state[2] = (-v / 2.67) * delta * 0.1;
 		  state[3] = v ;//+ a * 0.1;
